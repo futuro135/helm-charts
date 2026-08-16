@@ -27,6 +27,7 @@ helm install demo ./charts/postgres -n databases --create-namespace \
 ```
 helm-charts/
 ├── README.md
+├── LICENSE
 ├── .gitignore
 ├── .github/workflows/lint.yml
 └── charts/
@@ -46,11 +47,6 @@ On every push/PR, GitHub Actions runs:
 - `helm lint` for each chart under `charts/`
 - `helm template` with the chart's example values (when present)
 
-## Roadmap (optional)
-
-- Add a second chart (e.g. Redis or a sample web app)
-- Publish packaged charts to GHCR (OCI) or GitHub Pages (`helm repo add`)
-
 ## License
 
-Use whatever fits your portfolio (MIT is a common default). Add a `LICENSE` file when you publish the repo.
+[MIT](./LICENSE)
