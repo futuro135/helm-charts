@@ -1,0 +1,41 @@
+name: Lint Helm charts
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.17.3
+
+      - name: Lint charts
+        run: |
+          set -euo pipefail
+          for chart in charts/*/; do
+            echo "==> lint ${chart}"
+            helm lint "${chart}"
+          done
+
+      - name: Template charts
+        run: |
+          set -euo pipefail
+          for chart in charts/*/; do
+            name="$(basename "${chart}")"
+            example="${chart}examples/values-dev.yaml"
+            echo "==> template ${name}"
+            if [[ -f "${example}" ]]; then
+              helm template "ci-${name}" "${chart}" -f "${example}" >/dev/null
+            else
+              helm template "ci-${name}" "${chart}" >/dev/null
+            fi
+          done

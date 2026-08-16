@@ -1,0 +1,16 @@
+apiVersion: v2
+name: postgres
+description: Production-ready PostgreSQL Helm chart
+type: application
+version: 0.1.0
+appVersion: "16.4"
+keywords:
+  - postgresql
+  - database
+  - sql
+home: https://www.postgresql.org/
+sources:
+  - https://github.com/docker-library/postgres
+maintainers:
+  - name: portfolio
+    email: portfolio@example.com

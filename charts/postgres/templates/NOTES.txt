@@ -1,0 +1,23 @@
+1. Get the application connection details:
+
+  export POSTGRES_USER=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "postgres.secretName" . }} -o jsonpath="{.data.{{ .Values.auth.secretKeys.username }}}" | base64 -d)
+  export POSTGRES_PASSWORD=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "postgres.secretName" . }} -o jsonpath="{.data.{{ .Values.auth.secretKeys.password }}}" | base64 -d)
+  export POSTGRES_DB=$(kubectl get secret --namespace {{ .Release.Namespace }} {{ include "postgres.secretName" . }} -o jsonpath="{.data.{{ .Values.auth.secretKeys.database }}}" | base64 -d)
+
+2. Forward the PostgreSQL port to your machine:
+
+  kubectl port-forward --namespace {{ .Release.Namespace }} svc/{{ include "postgres.fullname" . }} 5432:{{ .Values.service.port }}
+
+3. Connect with psql:
+
+  PGPASSWORD="$POSTGRES_PASSWORD" psql -h 127.0.0.1 -p 5432 -U "$POSTGRES_USER" -d "$POSTGRES_DB"
+
+Internal DNS name inside the cluster:
+
+  {{ include "postgres.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}
+{{- if .Values.metrics.enabled }}
+
+Metrics endpoint:
+
+  {{ include "postgres.fullname" . }}-metrics.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.metrics.service.port }}/metrics
+{{- end }}

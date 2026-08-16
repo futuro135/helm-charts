@@ -1,0 +1,124 @@
+# Default values for postgres.
+# Override via --set or a custom values file.
+
+replicaCount: 1
+
+image:
+  repository: postgres
+  tag: "16.4"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  fsGroup: 999
+
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 999
+  runAsGroup: 999
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+service:
+  type: ClusterIP
+  port: 5432
+  annotations: {}
+
+# Auth credentials. Prefer existingSecret in real clusters.
+auth:
+  username: app
+  password: ""
+  database: app
+  postgresPassword: ""
+  # If set, chart uses this Secret instead of generating one.
+  # Expected keys: postgres-password, password (app user), username, database
+  existingSecret: ""
+  secretKeys:
+    postgresPassword: postgres-password
+    password: password
+    username: username
+    database: database
+
+persistence:
+  enabled: true
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 8Gi
+  annotations: {}
+  # existingClaim: ""
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Extra env vars (name/value)
+extraEnv: []
+
+# PostgreSQL config overrides written to ConfigMap and mounted as postgresql.conf fragment
+postgresql:
+  # shared_buffers, max_connections, etc.
+  config: {}
+  # Example:
+  # config:
+  #   max_connections: "100"
+  #   shared_buffers: "128MB"
+
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+
+networkPolicy:
+  enabled: false
+  allowExternal: true
+  # Extra ingress CIDRs / namespaces if needed
+  ingressNSMatchLabels: {}
+  ingressNSPodMatchLabels: {}
+
+metrics:
+  enabled: false
+  image:
+    repository: prometheuscommunity/postgres-exporter
+    tag: "v0.15.0"
+    pullPolicy: IfNotPresent
+  service:
+    port: 9187
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

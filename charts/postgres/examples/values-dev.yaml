@@ -1,0 +1,27 @@
+# Lightweight overrides for local / portfolio demos (kind, minikube, k3d)
+
+auth:
+  username: demo
+  password: demo-pass
+  database: demo
+  postgresPassword: demo-super
+
+persistence:
+  enabled: true
+  size: 2Gi
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+postgresql:
+  config:
+    max_connections: "50"
+    shared_buffers: "64MB"
+
+metrics:
+  enabled: true

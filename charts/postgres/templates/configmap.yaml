@@ -1,0 +1,16 @@
+{{- if .Values.postgresql.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "postgres.fullname" . }}-config
+  labels:
+    {{- include "postgres.labels" . | nindent 4 }}
+data:
+  # Mirrored into StatefulSet args as -c key=value (see statefulset.yaml).
+  # Kept as ConfigMap so operators can inspect applied settings via kubectl.
+  custom.conf: |
+    # Managed by Helm chart {{ .Chart.Name }}-{{ .Chart.Version }}
+    {{- range $key, $value := .Values.postgresql.config }}
+    {{ $key }} = '{{ $value }}'
+    {{- end }}
+{{- end }}
