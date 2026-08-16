@@ -11,10 +11,22 @@ not drop-in replacements for Bitnami / CloudNativePG / operators when you need H
 |-------|-------------|-------------|
 | [postgres](./charts/postgres) | Single-primary PostgreSQL (StatefulSet + PVC) | 16.4 |
 
+## Install from GHCR (OCI)
+
+После публикации в GitHub Container Registry:
+
+```bash
+helm install demo oci://ghcr.io/futuro135/charts/postgres \
+  --version 0.1.0 \
+  -n databases --create-namespace
+```
+
+Как это устроено и как опубликовать: **[docs/GHCR.md](./docs/GHCR.md)**.
+
 ## Install from git clone
 
 ```bash
-git clone https://github.com/<YOUR_GITHUB_USER>/helm-charts.git
+git clone https://github.com/futuro135/helm-charts.git
 cd helm-charts
 
 helm lint ./charts/postgres
@@ -29,23 +41,19 @@ helm-charts/
 ├── README.md
 ├── LICENSE
 ├── .gitignore
-├── .github/workflows/lint.yml
+├── .github/workflows/
+│   ├── lint.yml
+│   └── publish-ghcr.yml
 └── charts/
     └── postgres/
-        ├── Chart.yaml
-        ├── values.yaml
-        ├── values.schema.json
-        ├── README.md
-        ├── examples/
-        └── templates/
 ```
 
 ## CI
 
-On every push/PR, GitHub Actions runs:
-
-- `helm lint` for each chart under `charts/`
-- `helm template` with the chart's example values (when present)
+| Workflow | Когда | Что делает |
+|----------|--------|------------|
+| **Lint Helm charts** | push / PR | `helm lint` + `helm template` |
+| **Publish charts to GHCR** | вручную или GitHub Release | `helm package` + `helm push` в `ghcr.io` |
 
 ## License
 

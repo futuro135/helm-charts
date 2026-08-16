@@ -1,0 +1,58 @@
+name: Publish charts to GHCR
+
+# Публикует .tgz чартов в GitHub Container Registry (OCI).
+# Запуск: вручную (Actions → Publish → Run) или при создании GitHub Release.
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.17.3
+
+      - name: Login to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
+            -u "${{ github.actor }}" \
+            --password-stdin
+
+      - name: Package and push charts
+        env:
+          # Имя пользователя/организации на GitHub (нижний регистр обязателен для GHCR)
+          REGISTRY: ghcr.io/${{ github.repository_owner }}
+        run: |
+          set -euo pipefail
+          OWNER_LC="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          REGISTRY="ghcr.io/${OWNER_LC}"
+
+          mkdir -p .dist
+          for chart in charts/*/; do
+            name="$(basename "${chart}")"
+            echo "==> lint ${name}"
+            helm lint "${chart}"
+
+            echo "==> package ${name}"
+            helm package "${chart}" -d .dist
+
+            tgz="$(ls .dist/${name}-*.tgz | sort -V | tail -n1)"
+            echo "==> push ${tgz} → oci://${REGISTRY}/charts"
+            helm push "${tgz}" "oci://${REGISTRY}/charts"
+          done
+
+          echo ""
+          echo "Install example:"
+          echo "  helm install demo oci://${REGISTRY}/charts/postgres --version 0.1.0"
