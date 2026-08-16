@@ -13,15 +13,11 @@ not drop-in replacements for Bitnami / CloudNativePG / operators when you need H
 
 ## Install from GHCR (OCI)
 
-После публикации в GitHub Container Registry:
-
 ```bash
 helm install demo oci://ghcr.io/futuro135/charts/postgres \
   --version 0.1.0 \
   -n databases --create-namespace
 ```
-
-Как это устроено и как опубликовать: **[docs/GHCR.md](./docs/GHCR.md)**.
 
 ## Install from git clone
 
