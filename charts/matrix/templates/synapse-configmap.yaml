@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "matrix.synapse.fullname" . }}-config
+  labels:
+    {{- include "matrix.synapse.labels" . | nindent 4 }}
+data:
+  homeserver.yaml: |
+    server_name: {{ .Values.server.name | quote }}
+    public_baseurl: {{ include "matrix.publicBaseUrl" . | quote }}
+    pid_file: /data/homeserver.pid
+
+    listeners:
+      - port: 8008
+        tls: false
+        type: http
+        x_forwarded: true
+        resources:
+          - names: [client, federation]
+            compress: false
+
+    database:
+      name: psycopg2
+      args:
+        user: {{ .Values.database.user | quote }}
+        password: __POSTGRES_PASSWORD__
+        database: {{ .Values.database.name | quote }}
+        host: {{ .Values.database.host | quote }}
+        port: {{ .Values.database.port }}
+        cp_min: {{ .Values.database.cpMin }}
+        cp_max: {{ .Values.database.cpMax }}
+      allow_unsafe_locale: {{ .Values.database.allowUnsafeLocale }}
+
+    log_config: "/config/log.config"
+
+    media_store_path: /data/media_store
+    uploads_path: /data/uploads
+
+    registration_shared_secret: "__REGISTRATION_SHARED_SECRET__"
+    macaroon_secret_key: "__MACAROON_SECRET_KEY__"
+    form_secret: "__FORM_SECRET__"
+
+    enable_registration: {{ .Values.synapse.enableRegistration }}
+    enable_registration_without_verification: {{ .Values.synapse.enableRegistrationWithoutVerification }}
+
+    signing_key_path: "/data/signing.key"
+
+    trusted_key_servers:
+      {{- toYaml .Values.synapse.trustedKeyServers | nindent 6 }}
+
+    suppress_key_server_warning: {{ .Values.synapse.suppressKeyServerWarning }}
+    report_stats: {{ .Values.synapse.reportStats }}
+    {{- with .Values.synapse.extraConfig }}
+    {{- . | nindent 4 }}
+    {{- end }}
+  log.config: |
+    version: 1
+    formatters:
+      precise:
+        format: '%(asctime)s - %(name)s - %(lineno)d - %(levelname)s - %(request)s - %(message)s'
+    handlers:
+      console:
+        class: logging.StreamHandler
+        formatter: precise
+    loggers:
+      synapse.storage.SQL:
+        level: WARNING
+    root:
+      level: INFO
+      handlers: [console]
+    disable_existing_loggers: false

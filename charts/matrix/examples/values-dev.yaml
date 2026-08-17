@@ -1,0 +1,33 @@
+# Demo values — replace with your domain and DB credentials.
+# Matches a typical k3s + Traefik + cert-manager setup.
+
+server:
+  name: matrix.example.com
+
+database:
+  host: my-postgres-postgresql.default.svc.cluster.local
+  name: synapse
+  user: synapse
+  password: change-me
+
+persistence:
+  enabled: true
+  size: 2Gi
+
+synapse:
+  enableRegistration: false
+  enableRegistrationWithoutVerification: false
+
+element:
+  enabled: true
+  roomDirectoryServers:
+    - matrix.example.com
+    - matrix.org
+
+ingress:
+  enabled: true
+  className: traefik
+  catchAll: true
+  tls:
+    enabled: true
+    secretName: matrix-tls

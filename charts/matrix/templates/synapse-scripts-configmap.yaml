@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "matrix.synapse.fullname" . }}-scripts
+  labels:
+    {{- include "matrix.synapse.labels" . | nindent 4 }}
+data:
+  render-config.sh: |
+    #!/bin/sh
+    set -eu
+    python3 <<'PY'
+    import os
+    tpl = open('/config-tpl/homeserver.yaml').read()
+    for placeholder, env in (
+        ('__POSTGRES_PASSWORD__', 'POSTGRES_PASSWORD'),
+        ('__REGISTRATION_SHARED_SECRET__', 'REGISTRATION_SHARED_SECRET'),
+        ('__MACAROON_SECRET_KEY__', 'MACAROON_SECRET_KEY'),
+        ('__FORM_SECRET__', 'FORM_SECRET'),
+    ):
+        tpl = tpl.replace(placeholder, os.environ.get(env, ''))
+    open('/config/homeserver.yaml', 'w').write(tpl)
+    PY
+    cp /config-tpl/log.config /config/log.config
+  generate-signing-key.sh: |
+    #!/bin/sh
+    set -eu
+    if [ ! -f /data/signing.key ]; then
+      python -m synapse.app.homeserver \
+        --config-path /config/homeserver.yaml \
+        --generate-keys
+    fi
+    chown -R 991:991 /data

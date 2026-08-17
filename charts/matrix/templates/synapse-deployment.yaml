@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "matrix.synapse.fullname" . }}
+  labels:
+    {{- include "matrix.synapse.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.synapse.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "matrix.synapse.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/synapse-configmap.yaml") . | sha256sum }}
+        {{- if not .Values.synapse.existingSecret }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- end }}
+        {{- with .Values.synapse.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "matrix.synapse.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "matrix.serviceAccountName" . }}
+      {{- if .Values.synapse.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.synapse.podSecurityContext | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: config-with-secrets
+          image: "{{ .Values.synapse.image.repository }}:{{ .Values.synapse.image.tag }}"
+          imagePullPolicy: {{ .Values.synapse.image.pullPolicy }}
+          command: ["/bin/sh", "/scripts/render-config.sh"]
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.postgresSecretName" . }}
+                  key: {{ include "matrix.postgresSecretKey" . }}
+            - name: REGISTRATION_SHARED_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.secretName" . }}
+                  key: REGISTRATION_SHARED_SECRET
+            - name: MACAROON_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.secretName" . }}
+                  key: MACAROON_SECRET_KEY
+            - name: FORM_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "matrix.secretName" . }}
+                  key: FORM_SECRET
+          volumeMounts:
+            - name: config-tpl
+              mountPath: /config-tpl
+            - name: config
+              mountPath: /config
+            - name: scripts
+              mountPath: /scripts
+        - name: generate-signing-key
+          image: "{{ .Values.synapse.image.repository }}:{{ .Values.synapse.image.tag }}"
+          imagePullPolicy: {{ .Values.synapse.image.pullPolicy }}
+          securityContext:
+            runAsUser: 0
+          command: ["/bin/sh", "/scripts/generate-signing-key.sh"]
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+            - name: scripts
+              mountPath: /scripts
+      containers:
+        - name: synapse
+          image: "{{ .Values.synapse.image.repository }}:{{ .Values.synapse.image.tag }}"
+          imagePullPolicy: {{ .Values.synapse.image.pullPolicy }}
+          {{- if .Values.synapse.securityContext }}
+          securityContext:
+            {{- toYaml .Values.synapse.securityContext | nindent 12 }}
+          {{- end }}
+          env:
+            - name: SYNAPSE_CONFIG_PATH
+              value: /config/homeserver.yaml
+          ports:
+            - name: http
+              containerPort: 8008
+              protocol: TCP
+          {{- if .Values.synapse.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: {{ .Values.synapse.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.synapse.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.synapse.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.synapse.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.synapse.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: {{ .Values.synapse.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.synapse.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.synapse.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.synapse.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.synapse.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config-tpl
+          configMap:
+            name: {{ include "matrix.synapse.fullname" . }}-config
+        - name: scripts
+          configMap:
+            name: {{ include "matrix.synapse.fullname" . }}-scripts
+            defaultMode: 0755
+        - name: config
+          emptyDir: {}
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.existingClaim | default (printf "%s-data" (include "matrix.synapse.fullname" .)) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+      {{- with .Values.synapse.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.synapse.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.synapse.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

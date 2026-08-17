@@ -1,0 +1,29 @@
+{{- if .Values.element.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "matrix.element.fullname" . }}-config
+  labels:
+    {{- include "matrix.element.labels" . | nindent 4 }}
+data:
+  config.json: |
+    {
+      "default_server_config": {
+        "m.homeserver": {
+          "base_url": {{ include "matrix.publicBaseUrl" . | quote }},
+          "server_name": {{ .Values.server.name | quote }}
+        },
+        "m.identity_server": {
+          "base_url": {{ .Values.element.identityServer | quote }}
+        }
+      },
+      "brand": {{ .Values.element.brand | quote }},
+      "disable_custom_urls": {{ .Values.element.disableCustomUrls }},
+      "disable_guests": {{ .Values.element.disableGuests }},
+      "showLabsSettings": {{ .Values.element.showLabsSettings }},
+      "features": {{ .Values.element.features | toJson }},
+      "roomDirectory": {
+        "servers": {{ .Values.element.roomDirectoryServers | toJson }}
+      }
+    }
+{{- end }}

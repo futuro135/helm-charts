@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["server", "database"],
+  "properties": {
+    "server": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "publicBaseUrl": { "type": "string" }
+      }
+    },
+    "database": {
+      "type": "object",
+      "required": ["host", "name", "user"],
+      "properties": {
+        "host": { "type": "string", "minLength": 1 },
+        "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "name": { "type": "string", "minLength": 1 },
+        "user": { "type": "string", "minLength": 1 },
+        "password": { "type": "string" },
+        "existingSecret": { "type": "string" }
+      }
+    },
+    "synapse": {
+      "type": "object",
+      "properties": {
+        "replicaCount": { "type": "integer", "minimum": 1, "maximum": 1 },
+        "enableRegistration": { "type": "boolean" }
+      }
+    },
+    "element": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "ingress": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" }
+      }
+    }
+  }
+}

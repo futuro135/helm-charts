@@ -1,0 +1,18 @@
+apiVersion: v2
+name: matrix
+description: Matrix stack — Synapse homeserver and optional Element Web
+type: application
+version: 0.1.0
+appVersion: "1.109.0"
+keywords:
+  - matrix
+  - synapse
+  - element
+  - chat
+home: https://matrix.org/
+sources:
+  - https://github.com/element-hq/synapse
+  - https://github.com/element-hq/element-web
+maintainers:
+  - name: portfolio
+    email: portfolio@example.com

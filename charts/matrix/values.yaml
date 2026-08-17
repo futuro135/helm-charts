@@ -1,0 +1,154 @@
+# Matrix stack: Synapse + optional Element Web.
+# PostgreSQL is external — create DB/user separately.
+
+server:
+  name: matrix.example.com
+  publicBaseUrl: ""  # default: https://<server.name>
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+database:
+  host: postgres.default.svc.cluster.local
+  port: 5432
+  name: synapse
+  user: synapse
+  password: ""
+  existingSecret: ""
+  existingSecretKey: POSTGRES_PASSWORD
+  cpMin: 2
+  cpMax: 5
+  allowUnsafeLocale: true
+
+persistence:
+  enabled: true
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 2Gi
+  annotations: {}
+  existingClaim: ""
+
+synapse:
+  nameOverride: ""
+  replicaCount: 1
+  existingSecret: ""
+
+  image:
+    repository: matrixdotorg/synapse
+    tag: "v1.109.0"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8008
+
+  enableRegistration: false
+  enableRegistrationWithoutVerification: false
+
+  registrationSharedSecret: ""
+  macaroonSecretKey: ""
+  formSecret: ""
+
+  trustedKeyServers:
+    - server_name: matrix.org
+  suppressKeyServerWarning: true
+  reportStats: false
+  extraConfig: {}
+
+  podSecurityContext: {}
+  securityContext: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: {}
+  affinity: {}
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 250m
+      memory: 512Mi
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 15
+    timeoutSeconds: 5
+    failureThreshold: 6
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+element:
+  enabled: true
+  nameOverride: ""
+  replicaCount: 1
+
+  image:
+    repository: vectorim/element-web
+    tag: "v1.11.62"
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 80
+
+  brand: Element
+  identityServer: https://vector.im
+  disableCustomUrls: false
+  disableGuests: false
+  showLabsSettings: true
+  features: {}
+  roomDirectoryServers:
+    - matrix.org
+
+  podSecurityContext: {}
+  securityContext: {}
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: {}
+  affinity: {}
+
+  resources:
+    requests:
+      cpu: 20m
+      memory: 32Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
+  livenessProbe:
+    enabled: true
+    initialDelaySeconds: 15
+    periodSeconds: 15
+
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 5
+    periodSeconds: 10
+
+ingress:
+  enabled: true
+  className: traefik
+  catchAll: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    acme.cert-manager.io/http01-edit-in-place: "true"
+    traefik.ingress.kubernetes.io/redirect-entry-point: https
+    traefik.ingress.kubernetes.io/redirect-permanent: "true"
+  tls:
+    enabled: true
+    secretName: matrix-tls

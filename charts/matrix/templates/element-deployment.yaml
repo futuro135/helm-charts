@@ -1,0 +1,82 @@
+{{- if .Values.element.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "matrix.element.fullname" . }}
+  labels:
+    {{- include "matrix.element.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.element.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "matrix.element.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/element-configmap.yaml") . | sha256sum }}
+        {{- with .Values.element.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "matrix.element.labels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "matrix.serviceAccountName" . }}
+      {{- if .Values.element.podSecurityContext }}
+      securityContext:
+        {{- toYaml .Values.element.podSecurityContext | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: element
+          image: "{{ .Values.element.image.repository }}:{{ .Values.element.image.tag }}"
+          imagePullPolicy: {{ .Values.element.image.pullPolicy }}
+          {{- if .Values.element.securityContext }}
+          securityContext:
+            {{- toYaml .Values.element.securityContext | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          {{- if .Values.element.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: {{ .Values.element.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.element.livenessProbe.periodSeconds }}
+          {{- end }}
+          {{- if .Values.element.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: {{ .Values.element.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.element.readinessProbe.periodSeconds }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.element.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.json
+              subPath: config.json
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "matrix.element.fullname" . }}-config
+      {{- with .Values.element.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.element.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.element.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

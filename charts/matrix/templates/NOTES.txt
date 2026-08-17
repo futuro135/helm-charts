@@ -1,0 +1,23 @@
+1. Homeserver: {{ include "matrix.publicBaseUrl" . }}
+{{- if .Values.element.enabled }}
+   Element UI:   {{ include "matrix.publicBaseUrl" . }}/
+{{- end }}
+
+2. Internal services:
+
+   Synapse:  {{ include "matrix.synapse.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.synapse.service.port }}
+{{- if .Values.element.enabled }}
+   Element:  {{ include "matrix.element.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.element.service.port }}
+{{- end }}
+
+3. PostgreSQL is external. This chart does not create a database.
+   Host: {{ .Values.database.host }}
+   DB:   {{ .Values.database.name }}
+   User: {{ .Values.database.user }}
+
+4. Port-forward (without Ingress):
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "matrix.synapse.fullname" . }} 8008:{{ .Values.synapse.service.port }}
+{{- if .Values.element.enabled }}
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "matrix.element.fullname" . }} 8080:{{ .Values.element.service.port }}
+{{- end }}
