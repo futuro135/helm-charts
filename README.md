@@ -1,5 +1,12 @@
 # helm-charts
 
+[![Lint](https://img.shields.io/github/actions/workflow/status/futuro135/helm-charts/lint.yml?branch=master&label=lint)](https://github.com/futuro135/helm-charts/actions/workflows/lint.yml)
+[![License: MIT](https://img.shields.io/github/license/futuro135/helm-charts)](./LICENSE)
+[![Helm](https://img.shields.io/badge/Helm-3-0F1689?logo=helm&logoColor=white)](https://helm.sh)
+[![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white)](https://kubernetes.io)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16.4-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![GHCR](https://img.shields.io/badge/GHCR-OCI-blue?logo=github)](https://github.com/futuro135/helm-charts/pkgs/container/charts%2Fpostgres)
+
 Personal Helm chart repository for portfolio and learning.
 
 Charts are production-shaped **examples** (clear values, probes, securityContext, persistence) —
